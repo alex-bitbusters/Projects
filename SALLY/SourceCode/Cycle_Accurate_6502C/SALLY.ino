@@ -745,7 +745,7 @@ void Write_Indexed_Indirect_Y(uint8_t local_data)  {
 
     ial = Fetch_Immediate();
     bal = read_byte(ial);
-    bah = read_byte(ial+1)<<8;
+    bah = read_byte(0xFF&(ial+1))<<8;
     effective_address = bah + bal + register_y;
     if (SPEEDUP==0) read_byte(effective_address);
     write_byte(effective_address , local_data );
@@ -1825,18 +1825,19 @@ void opcode_0xFC() {  Fetch_Absolute_X(1);  Begin_Fetch_Next_Opcode(); return;  
 // --------------------------------------------------------------------------------------------------
 // JAM - Lock up the processor
 // --------------------------------------------------------------------------------------------------
-void opcode_0x02() {  Fetch_Immediate();   while (1) {}    return;  }  // 0x02 - JAM
-void opcode_0x12() {  Fetch_Immediate();   while (1) {}    return;  }  // 0x12 - JAM
-void opcode_0x22() {  Fetch_Immediate();   while (1) {}    return;  }  // 0x22 - JAM
-void opcode_0x32() {  Fetch_Immediate();   while (1) {}    return;  }  // 0x32 - JAM
-void opcode_0x42() {  Fetch_Immediate();   while (1) {}    return;  }  // 0x42 - JAM
-void opcode_0x52() {  Fetch_Immediate();   while (1) {}    return;  }  // 0x52 - JAM
-void opcode_0x62() {  Fetch_Immediate();   while (1) {}    return;  }  // 0x62 - JAM
-void opcode_0x72() {  Fetch_Immediate();   while (1) {}    return;  }  // 0x72 - JAM
-void opcode_0x92() {  Fetch_Immediate();   while (1) {}    return;  }  // 0x92 - JAM
-void opcode_0xB2() {  Fetch_Immediate();   while (1) {}    return;  }  // 0xB2 - JAM
-void opcode_0xD2() {  Fetch_Immediate();   while (1) {}    return;  }  // 0xD2 - JAM
-void opcode_0xF2() {  Fetch_Immediate();   while (1) {}    return;  }  // 0xF2 - JAM
+inline void Handle_JAM() {  Fetch_Immediate();   while (1) { service_halt_line(); }  }
+void opcode_0x02() {  Handle_JAM();    return;  }  // 0x02 - JAM
+void opcode_0x12() {  Handle_JAM();    return;  }  // 0x12 - JAM
+void opcode_0x22() {  Handle_JAM();    return;  }  // 0x22 - JAM
+void opcode_0x32() {  Handle_JAM();    return;  }  // 0x32 - JAM
+void opcode_0x42() {  Handle_JAM();    return;  }  // 0x42 - JAM
+void opcode_0x52() {  Handle_JAM();    return;  }  // 0x52 - JAM
+void opcode_0x62() {  Handle_JAM();    return;  }  // 0x62 - JAM
+void opcode_0x72() {  Handle_JAM();    return;  }  // 0x72 - JAM
+void opcode_0x92() {  Handle_JAM();    return;  }  // 0x92 - JAM
+void opcode_0xB2() {  Handle_JAM();    return;  }  // 0xB2 - JAM
+void opcode_0xD2() {  Handle_JAM();    return;  }  // 0xD2 - JAM
+void opcode_0xF2() {  Handle_JAM();    return;  }  // 0xF2 - JAM
 
 
 // --------------------------------------------------------------------------------------------------
@@ -1992,6 +1993,7 @@ void opcode_0xAB() {
             case 51: mode=3;  Serial.println("M3"); break;
           }
         }
+        local_counter=0;
       }    
     
       // Poll for NMI and IRQ

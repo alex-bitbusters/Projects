@@ -286,7 +286,7 @@ F http://www.westerndesigncenter.com/wdc/documentation/w65c816s.pdf
 $ENDCMP
 #
 $CMP W65C816SxQ
-D W65C02S 8/16-bit CMOS General Purpose Microprocessor, PQFP-44
+D W65C816S 8/16-bit CMOS General Purpose Microprocessor, PQFP-44
 K 6502 65816 CPU uP
 F http://www.westerndesigncenter.com/wdc/documentation/w65c816s.pdf
 $ENDCMP
