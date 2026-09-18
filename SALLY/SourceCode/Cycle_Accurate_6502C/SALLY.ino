@@ -226,8 +226,10 @@ inline void service_halt_line() {
     } while (direct_halt_n == 0x0);
 
     current_clk_phase = ((GPIO6_DR >> 12) & 0x1);
-    while (((GPIO6_DR >> 12) & 0x1)==current_clk_phase) {}
-    while (((GPIO6_DR >> 12) & 0x1)!=0) {}            // Reacquire the bus on the next safe CLK-low phase
+    if (current_clk_phase!=0) {
+      while (((GPIO6_DR >> 12) & 0x1)==current_clk_phase) {}
+      while (((GPIO6_DR >> 12) & 0x1)!=0) {}          // Reacquire the bus on the next safe CLK-low phase
+    }
     enable_bus_drivers();
     digitalWriteFast(PIN_RDWR_n,  0x1);
     digitalWriteFast(PIN_DATAOUT_OE_n,  0x1 );
@@ -746,7 +748,7 @@ void Write_Indexed_Indirect_Y(uint8_t local_data)  {
     uint16_t bal, bah;
 
     ial = Fetch_Immediate();
-    bal = read_byte(ial);
+    bal = read_byte(0xFF&ial);
     bah = read_byte(0xFF&(ial+1))<<8;
     effective_address = bah + bal + register_y;
     if (SPEEDUP==0) read_byte(effective_address);
