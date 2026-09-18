@@ -226,10 +226,8 @@ inline void service_halt_line() {
     } while (direct_halt_n == 0x0);
 
     current_clk_phase = ((GPIO6_DR >> 12) & 0x1);
-    if (current_clk_phase!=0) {
-      while (((GPIO6_DR >> 12) & 0x1)==current_clk_phase) {}
-      while (((GPIO6_DR >> 12) & 0x1)!=0) {}          // Reacquire the bus on the next safe CLK-low phase
-    }
+    while (((GPIO6_DR >> 12) & 0x1)==current_clk_phase) {}
+    while (((GPIO6_DR >> 12) & 0x1)!=0) {}            // Reacquire the bus on the next safe CLK-low phase
     direct_halt_n = digitalReadFast(PIN_HALT_n);
     if (direct_halt_n == 0x0) return;
     enable_bus_drivers();
@@ -1501,7 +1499,7 @@ void opcode_0x40()  {
     
     Fetch_Immediate();
     read_byte(register_sp_fixed);
-    register_flags = pop();
+    register_flags = (pop() | 0x20) & 0xEF;
     pcl = pop();
     pch = pop()<<8;
     register_pc = pch+pcl;  
