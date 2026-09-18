@@ -959,13 +959,11 @@ void Calculate_ADC(uint16_t local_data)  {
         bcd_high = (0xF0&register_a) + (0xF0&local_data) + low_carry;   
         if (bcd_high>0x90) { high_carry=1;  bcd_high = bcd_high - 0xA0 ; } 
         
-        register_flags = register_flags & 0xFE;              // Clear the C flag
-        if ((0x00FF&bcd_total) > 0x09) { bcd_total=bcd_total+0x010; bcd_total=bcd_total-0x0A; }    
-
-        if (high_carry==1) { bcd_total=bcd_total-0xA0; register_flags = register_flags | 0x01;  }           // Set the C flag
+        bcd_total = (bcd_high & 0xF0) | (bcd_low & 0x0F);
+        if (high_carry==1)                            register_flags = register_flags | 0x01;              // Set the C flag
         else                                           register_flags = register_flags & 0xFE;              // Clear the C flag     
         
-        total = (0xFF & (bcd_low + bcd_high));
+        total = (0xFF & bcd_total);
     }
     
     else {
@@ -1027,13 +1025,11 @@ void Calculate_SBC(uint16_t local_data)  {
         bcd_high = (0xF0&register_a) - (0xF0&local_data) - low_carry;    
         if (bcd_high>0x90) { high_carry=1;  bcd_high = bcd_high + 0xA0 ; } 
         
-        register_flags = register_flags & 0xFE;              // Clear the C flag
-        if ((0x00FF&bcd_total) > 0x09) { bcd_total=bcd_total+0x010; bcd_total=bcd_total-0x0A; }    
-
-        if (high_carry==0) { bcd_total=bcd_total-0xA0; register_flags = register_flags | 0x01;  }           // Set the C flag
+        bcd_total = (bcd_high & 0xF0) | (bcd_low & 0x0F);
+        if (high_carry==0)                            register_flags = register_flags | 0x01;              // Set the C flag
         else                                           register_flags = register_flags & 0xFE;              // Clear the C flag     
         
-        total = (0xFF & (bcd_low + bcd_high));
+        total = (0xFF & bcd_total);
     }
     
     else {  
@@ -1750,15 +1746,17 @@ void opcode_0x6B() {  Calculate_ARR(Fetch_Immediate());  return;  }  // 0x6B - A
 // --------------------------------------------------------------------------------------------------
 void Calculate_SBX(uint16_t local_data)  { 
     int16_t signed_total=0;
+    uint16_t register_ax=0;
 
  
     Begin_Fetch_Next_Opcode();
     
-    register_x = register_a & register_x;
+    register_ax = register_a & register_x;
+    register_x = register_ax;
 
 
     register_x =  register_x - local_data;
-    signed_total = (int16_t)register_x - (int16_t)(local_data );
+    signed_total = (int16_t)register_ax - (int16_t)(local_data );
 
     
     if (signed_total>=0)    register_flags = register_flags | 0x01;              // Set the C flag
@@ -1933,10 +1931,8 @@ void opcode_0x9B() {
     
 // 0x8B - ANE - Immediate
 void opcode_0x8B() {
-    
-    Calc_Flags_NEGATIVE_ZERO(register_a);
-    
     register_a = (register_a | 0xEE) & register_x & Fetch_Immediate();
+    Calc_Flags_NEGATIVE_ZERO(register_a);
     
     Begin_Fetch_Next_Opcode(); 
     return;  
@@ -1945,11 +1941,9 @@ void opcode_0x8B() {
     
 // 0xAB - LAX - Immediate 
 void opcode_0xAB() {
-    
-    Calc_Flags_NEGATIVE_ZERO(register_a);
-    
     register_a = (register_a | 0xEE) & Fetch_Immediate();
     register_x = register_a;
+    Calc_Flags_NEGATIVE_ZERO(register_a);
     
     Begin_Fetch_Next_Opcode(); 
     return;  
