@@ -143,7 +143,6 @@
 
 uint8_t   register_flags=0x34;
 uint8_t   next_instruction;
-uint8_t   internal_memory_range=0;
 uint8_t   nmi_n_old=1;
 uint8_t   register_a=0;
 uint8_t   register_x=0;
@@ -216,6 +215,7 @@ inline void release_bus_drivers() {
 
 
 inline void service_halt_line() {
+  uint8_t current_clk_phase=0;
   direct_halt_n = digitalReadFast(PIN_HALT_n);
 
   if (direct_halt_n == 0x0) {
@@ -225,7 +225,9 @@ inline void service_halt_line() {
       direct_halt_n = digitalReadFast(PIN_HALT_n);
     } while (direct_halt_n == 0x0);
 
-    while (((GPIO6_DR >> 12) & 0x1)!=0) {}            // Reacquire the bus on the safe CLK-low phase
+    current_clk_phase = ((GPIO6_DR >> 12) & 0x1);
+    while (((GPIO6_DR >> 12) & 0x1)==current_clk_phase) {}
+    while (((GPIO6_DR >> 12) & 0x1)!=0) {}            // Reacquire the bus on the next safe CLK-low phase
     enable_bus_drivers();
     digitalWriteFast(PIN_RDWR_n,  0x1);
     digitalWriteFast(PIN_DATAOUT_OE_n,  0x1 );
@@ -1189,7 +1191,7 @@ void Calculate_BIT(uint8_t local_data)  {
     
     Begin_Fetch_Next_Opcode();
     
-    register_flags = (register_flags & 0x3F) | (local_data & 0xC0);             // Copy fetched memory[7:6] to C,V flags
+    register_flags = (register_flags & 0x3F) | (local_data & 0xC0);             // Copy fetched memory[7:6] to N,V flags
     
     temp = local_data & register_a;
     if (temp==0)           register_flags = register_flags | 0x02;              // Set the Z flag
@@ -2099,7 +2101,7 @@ void opcode_0xAB() {
         case 0x58:   opcode_0x58();    break;  // CLI
         case 0x59:   opcode_0x59();    break;  // EOR - Absolute,Y
         case 0x5A:   opcode_0xEA();    break;  // NOP
-        case 0x5B:   opcode_0x5B();    break;  // RE - Absolute , Y
+        case 0x5B:   opcode_0x5B();    break;  // SRE - Absolute , Y
         case 0x5C:   opcode_0x5C();    break;  // NOP - Absolute , X
         case 0x5D:   opcode_0x5D();    break;  // EOR - Absolute,X
         case 0x5E:   opcode_0x5E();    break;  // LSR - Logical Shift Right - Absolute , X
