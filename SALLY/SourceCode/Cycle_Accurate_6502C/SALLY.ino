@@ -161,6 +161,7 @@ uint8_t   last_access_internal_RAM=0;
 uint8_t   ea_data=0;
 uint8_t   mode=0;
 uint8_t   bus_is_released=0;
+int       incomingByte;
 
 uint16_t  register_pc=0;
 uint16_t  current_address=0;
@@ -224,6 +225,7 @@ inline void service_halt_line() {
       direct_halt_n = digitalReadFast(PIN_HALT_n);
     } while (direct_halt_n == 0x0);
 
+    while (((GPIO6_DR >> 12) & 0x1)!=0) {}            // Reacquire the bus on the safe CLK-low phase
     enable_bus_drivers();
     digitalWriteFast(PIN_RDWR_n,  0x1);
     digitalWriteFast(PIN_DATAOUT_OE_n,  0x1 );
@@ -763,7 +765,7 @@ void Double_WriteBack(uint8_t local_data)  {
 void reset_sequence() {
     uint16_t temp1, temp2;
        
-    while (digitalReadFast(PIN_RESET)!=0) {}                        // Stay here until RESET deasserts
+    while (digitalReadFast(PIN_RESET)==0) {}                        // Stay here until RESET deasserts
             
                 
     digitalWriteFast(PIN_RDWR_n,  0x1);         
@@ -1461,9 +1463,9 @@ void opcode_0x6C()  {
     lal = Fetch_Immediate();        
     lah = Fetch_Immediate()<<8;     
     adl = read_byte(lah + lal);     
-    adh = read_byte(lah + lal + 1)<<8;
+    adh = read_byte(lah | ((lal + 1) & 0x00FF))<<8;
     effective_address = adh+adl;  
-    register_pc = (0xFF00&adh) + (0x00FF&effective_address) ;  // 6502 page wrapping bug 
+    register_pc = effective_address;                             // 6502 page wrapping bug
     assert_sync=1;
     start_read(register_pc);
     return ;
@@ -1978,7 +1980,7 @@ void opcode_0xAB() {
 
   while (1) {
       
-      if (direct_reset==1) reset_sequence();
+      if (direct_reset==0) reset_sequence();
       
       
       // Set Acceleration using UART receive characters
