@@ -1656,13 +1656,14 @@ void opcode_0xBF() { register_a=Fetch_Absolute_Y(1);          register_x=registe
 // --------------------------------------------------------------------------------------------------
 // Decrement the contents of a memory location and then compare the result with the A register.
 // --------------------------------------------------------------------------------------------------
-void opcode_0xC7() {  Double_WriteBack(Calculate_DEC(Fetch_ZeroPage()));             Calculate_CMP(global_temp);  return;  }  // 0xC7 - DCP - ZeroPage
-void opcode_0xD7() {  Double_WriteBack(Calculate_DEC(Fetch_ZeroPage_X()));           Calculate_CMP(global_temp);  return;  }  // 0xD7 - DCP - ZeroPage , X
-void opcode_0xC3() {  Double_WriteBack(Calculate_DEC(Fetch_Indexed_Indirect_X()));   Calculate_CMP(global_temp);  return;  }  // 0xC3 - DCP - Indexed Indirect X
-void opcode_0xD3() {  Double_WriteBack(Calculate_DEC(Fetch_Indexed_Indirect_Y(0)));  Calculate_CMP(global_temp);  return;  }  // 0xD3 - DCP - Indirect Indexed  Y
-void opcode_0xCF() {  Double_WriteBack(Calculate_DEC(Fetch_Absolute()));             Calculate_CMP(global_temp);  return;  }  // 0xCF - DCP - Absolute
-void opcode_0xDF() {  Double_WriteBack(Calculate_DEC(Fetch_Absolute_X(0)));          Calculate_CMP(global_temp);  return;  }  // 0xDF - DCP - Absolute , X
-void opcode_0xDB() {  Double_WriteBack(Calculate_DEC(Fetch_Absolute_Y(0)));          Calculate_CMP(global_temp);  return;  }  // 0xDB - DCP - Absolute , Y
+inline void Handle_DCP(uint8_t local_data) { uint8_t local_result=Calculate_DEC(local_data); Double_WriteBack(local_result); Calculate_CMP(local_result); }
+void opcode_0xC7() {  Handle_DCP(Fetch_ZeroPage());             return;  }  // 0xC7 - DCP - ZeroPage
+void opcode_0xD7() {  Handle_DCP(Fetch_ZeroPage_X());           return;  }  // 0xD7 - DCP - ZeroPage , X
+void opcode_0xC3() {  Handle_DCP(Fetch_Indexed_Indirect_X());   return;  }  // 0xC3 - DCP - Indexed Indirect X
+void opcode_0xD3() {  Handle_DCP(Fetch_Indexed_Indirect_Y(0));  return;  }  // 0xD3 - DCP - Indirect Indexed  Y
+void opcode_0xCF() {  Handle_DCP(Fetch_Absolute());             return;  }  // 0xCF - DCP - Absolute
+void opcode_0xDF() {  Handle_DCP(Fetch_Absolute_X(0));          return;  }  // 0xDF - DCP - Absolute , X
+void opcode_0xDB() {  Handle_DCP(Fetch_Absolute_Y(0));          return;  }  // 0xDB - DCP - Absolute , Y
 
 
 
@@ -2001,7 +2002,7 @@ void opcode_0xAB() {
     
       // Poll for NMI and IRQ
       //
-      if (nmi_n_old==0 && direct_nmi==1)        nmi_handler();          
+      if (nmi_n_old==1 && direct_nmi==0)        nmi_handler();          
       if (direct_irq==0x1  && (flag_i)==0x0)    irq_handler(0x0);   
       nmi_n_old = direct_nmi;                                        
 
