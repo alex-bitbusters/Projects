@@ -801,6 +801,7 @@ void nmi_handler() {
     uint16_t temp1, temp2;
     
     wait_for_CLK_rising_edge();                                     // Begin processing on next CLK edge
+    nmi_n_old = direct_nmi;                                         // Consume the sampled NMI edge before vectoring
     
     register_flags = register_flags | 0x20;                         // Set the flag[5]          
     register_flags = register_flags & 0xEF;                         // Clear the B flag     
@@ -1985,7 +1986,7 @@ void opcode_0xAB() {
       // for acceleration modes 0,1,2,3
       //
       local_counter++;
-      if (local_counter==8000){
+      if (local_counter>=8000){
         if (Serial.available() ) { 
           incomingByte = Serial.read();   
           switch (incomingByte){
