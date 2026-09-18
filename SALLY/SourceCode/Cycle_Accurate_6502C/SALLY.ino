@@ -1466,7 +1466,8 @@ void opcode_0x6C()  {
     lal = Fetch_Immediate();        
     lah = Fetch_Immediate()<<8;     
     adl = read_byte(lah + lal);     
-    adh = read_byte(lah | ((lal + 1) & 0x00FF))<<8;
+    if (lal==0x00FF) adh = read_byte(lah)<<8;
+    else             adh = read_byte(lah + lal + 1)<<8;
     effective_address = adh+adl;  
     register_pc = effective_address;                             // 6502 page wrapping bug
     assert_sync=1;
@@ -1737,7 +1738,8 @@ void Calculate_ARR(uint8_t local_data) {
     
     register_a = local_old_C | (0x7F& (register_a >> 1));  
 
-    register_flags = register_flags & 0xBE;                                            // Pre-clear the C and V flags   
+    register_flags = register_flags & 0xFE;                                            // Pre-clear the C flag   
+    register_flags = register_flags & 0xBF;                                            // Pre-clear the V flag   
     if ( (0xC0 & register_a) == 0x40) {  register_flags = register_flags | 0x40;  }    // Set the V flag 
     if ( (0xC0 & register_a) == 0x80) {  register_flags = register_flags | 0x41;  }    // Set the C and V flags 
     if ( (0xC0 & register_a) == 0xC0) {  register_flags = register_flags | 0x01;  }    // Set the C flag 
@@ -1852,13 +1854,18 @@ void opcode_0xF2() {  Handle_JAM();    return;  }  // 0xF2 - JAM
 // Unstable 6502 opcodes
 // --------------------------------------------------------------------------------------------------
 
-// 0x93 - SHA - ZeroPage , Y 
+// 0x93 - SHA - Indirect Indexed  Y 
 void opcode_0x93() {
     uint16_t initial_ea;
+    uint16_t base_address;
+    uint16_t bal, bah;
     
     initial_ea = Fetch_Immediate(); 
-    effective_address = (0x00FF&(initial_ea + register_y)); 
-    if ( (0xFF00&initial_ea) != (0xFF00&effective_address) ) effective_address = effective_address & (0x00FF | ((register_a & register_x)<<8));
+    bal = read_byte(0x00FF&initial_ea);
+    bah = read_byte(0x00FF&(initial_ea+1)) << 8;
+    base_address = bah + bal;
+    effective_address = base_address + register_y; 
+    if ( (0xFF00&base_address) != (0xFF00&effective_address) ) effective_address = effective_address & (0x00FF | ((register_a & register_x)<<8));
     //read_byte(effective_address); 
     write_byte( effective_address , (register_a & register_x & ((effective_address>>8)+1)) );   
     Begin_Fetch_Next_Opcode(); 
