@@ -230,6 +230,8 @@ inline void service_halt_line() {
       while (((GPIO6_DR >> 12) & 0x1)==current_clk_phase) {}
       while (((GPIO6_DR >> 12) & 0x1)!=0) {}          // Reacquire the bus on the next safe CLK-low phase
     }
+    direct_halt_n = digitalReadFast(PIN_HALT_n);
+    if (direct_halt_n == 0x0) return;
     enable_bus_drivers();
     digitalWriteFast(PIN_RDWR_n,  0x1);
     digitalWriteFast(PIN_DATAOUT_OE_n,  0x1 );
@@ -815,7 +817,7 @@ void nmi_handler() {
     temp1 = read_byte(0xFFFA);                                      // Fetch Vector PCL
     temp2 = read_byte(0xFFFB);                                      // Fetch Vector PCH
                 
-    register_flags = register_flags | 0x34;                         // Set the I flag and restore the B flag
+    register_flags = (register_flags | 0x24) & 0xEF;               // Set the I flag and keep B cleared in the live status
 
     register_pc = (temp2<<8) | temp1;           
     assert_sync=1;
@@ -844,7 +846,7 @@ void irq_handler(uint8_t opcode_is_brk) {
     temp1 = read_byte(0xFFFE);                                      // Fetch Vector PCL
     temp2 = read_byte(0xFFFF);                                      // Fetch Vector PCH
                 
-    register_flags = register_flags | 0x34;                         // Set the I flag and restore the B flag
+    register_flags = (register_flags | 0x24) & 0xEF;               // Set the I flag and clear B in the live status
                 
     register_pc = (temp2<<8) | temp1;           
     assert_sync=1;
